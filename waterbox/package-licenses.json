@@ -1,8 +1,8 @@
 {
   "package": "godot",
-  "effectiveTerms": "MIT for the Godot Engine and for this core; the third-party libraries inside Godot under their own permissive licences (zlib, BSD, MIT, Apache-2.0, the FreeType Project License and others), listed with their texts in Godot's COPYRIGHT.txt; MIT for Mesa",
+  "effectiveTerms": "MIT for the Godot Engine and for this core; the third-party libraries inside Godot under their own permissive licences (zlib, BSD, MIT, Apache-2.0, the FreeType Project License and others), listed with their texts in Godot's COPYRIGHT.txt; MIT for Mesa; Apache-2.0 with the LLVM exception for LLVM",
   "commercialUse": "allowed",
-  "note": "The built core combines this repository's code (MIT): the Chimera module in module/chimera and the build scripts; the Godot Engine (MIT), compiled from the submodule extern/godot (4.7.2-stable) as an export template for Linux with this repository's patches/ applied, which includes the third-party libraries Godot ships in its thirdparty/ folder (FreeType, HarfBuzz, ICU, libpng, libjpeg-turbo, libwebp, libogg, libvorbis, libtheora, mbed TLS, PCRE2, ThorVG, zlib, zstd, Brotli, Jolt Physics and others), each under the licence COPYRIGHT.txt gives; and Mesa (MIT), whose softpipe driver behind OSMesa is the OpenGL Godot draws with. The package carries no game: the project brings the game's .pck.",
+  "note": "The built core combines this repository's code (MIT): the Chimera module in module/chimera and the build scripts; the Godot Engine (MIT), compiled from the submodule extern/godot (4.7.2-stable) as an export template for Linux with this repository's patches/ applied, which includes the third-party libraries Godot ships in its thirdparty/ folder (FreeType, HarfBuzz, ICU, libpng, libjpeg-turbo, libwebp, libogg, libvorbis, libtheora, mbed TLS, PCRE2, ThorVG, zlib, zstd, Brotli, Jolt Physics and others), each under the licence COPYRIGHT.txt gives; Mesa (MIT), whose llvmpipe driver behind OSMesa is the OpenGL Godot draws with (with this repository's waterbox/mesa-patches applied); and LLVM (Apache-2.0 with the LLVM exception), which llvmpipe compiles the shaders with. The package carries no game: the project brings the game's .pck.",
   "components": [
     {
       "name": "chimera-core-godot (the Chimera module and the build)",
@@ -29,12 +29,20 @@
       "sourceUrl": "https://github.com/godotengine/godot/archive/{commit}.tar.gz"
     },
     {
-      "name": "Mesa (softpipe + OSMesa, the core's OpenGL)",
+      "name": "Mesa (llvmpipe + OSMesa, the core's OpenGL)",
       "license": "MIT",
       "url": "https://gitlab.freedesktop.org/mesa/mesa",
       "version": "24.0.9",
       "file": "build/mesa/docs/license.rst",
       "sourceUrl": "https://archive.mesa3d.org/mesa-24.0.9.tar.xz"
+    },
+    {
+      "name": "LLVM (the compiler llvmpipe makes the shaders' code with)",
+      "license": "Apache-2.0 WITH LLVM-exception",
+      "url": "https://github.com/llvm/llvm-project",
+      "version": "18.1.8",
+      "file": "build/llvm-src/llvm/LICENSE.TXT",
+      "sourceUrl": "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/llvm-project-18.1.8.src.tar.xz"
     }
   ]
 }

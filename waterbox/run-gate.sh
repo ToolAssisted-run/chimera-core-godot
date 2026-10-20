@@ -30,6 +30,9 @@
 #                session; a project's save file, or the export's .zip, is in
 #                user:// when the game starts; a zip that names a place
 #                outside user:// is refused
+#   renderer     the game draws on llvmpipe with the pinned CPU's 128-bit
+#                vectors, in both builds, whatever the computer's CPU or
+#                environment
 #   refusals     a pack that is not there, and a file that is not a pack:
 #                each says why
 #
@@ -55,6 +58,7 @@ step() { # step <what> <log> <command...>
 		grep "error:" "$log" | head -10; tail -15 "$log"; echo "$what failed ($log)"; exit 1
 	fi
 }
+step "the LLVM builds" "$root/build/gate-llvm.log" bash -c "bash '$here/build-llvm.sh' native && bash '$here/build-llvm.sh' guest -m '$mb'"
 step "the Mesa builds" "$root/build/gate-mesa.log" bash -c "bash '$here/setup-mesa.sh' -m '$mb' && bash '$here/setup-mesa.sh' -n"
 step "the sandbox's math for the native build" "$root/build/gate-libm.log" bash "$here/make-native-libm.sh" "$mb"
 step "the native Godot build" "$root/build/gate-native.log" bash "$here/build-godot.sh" native -m "$mb"
@@ -76,9 +80,9 @@ fail() { echo "FAIL $*"; fails=$((fails + 1)); }
 # what a run says: the digests and the lines the game printed (Godot's own
 # warnings at exit, and miniBox's log lines, are not the machine's). A
 # session test starts the game a second time in the new host before the
-# state replaces it, and that start prints its "ready" line again: only the
-# first counts.
-digests() { grep -E '^([A-Za-z]+(\[[^]]*\])?=|probe )' "$1" | awk '!/^probe ready/ || !seen++' || true; }
+# state replaces it, and that start prints its start-up lines (renderer,
+# ready) again: only the first of each counts.
+digests() { grep -E '^([A-Za-z]+(\[[^]]*\])?=|probe )' "$1" | awk '!/^probe (ready|renderer)/ || !seen[$0]++' || true; }
 same() { # same <test> <a> <b> <what>
 	digests "$2" > "$2.d"
 	digests "$3" > "$3.d"
@@ -149,6 +153,10 @@ same equivalence "$work/pn.txt" "$work/pw.txt" "the probe: native = sandbox, $pf
 "$wbx" "$core" "$work/probe" --frames $pf "${probe_movie[@]}" --session-at 25 > "$work/ps.txt" 2> "$work/ps.err"
 same session "$work/ps.txt" "$work/pw.txt" "the probe saved at frame 25, between the two clicks, loaded into a new host = straight"
 
+has renderer "$work/pw.txt" "probe renderer=[llvmpipe (LLVM 18.1.8, 128 bits)] [4.5 (Core Profile) Mesa 24.0.9]" "the game draws on llvmpipe with 128-bit vectors (the pinned CPU) in the sandbox"
+has renderer "$work/pn.txt" "probe renderer=[llvmpipe (LLVM 18.1.8, 128 bits)] [4.5 (Core Profile) Mesa 24.0.9]" "and in the native build, whatever this computer's CPU"
+LP_NATIVE_VECTOR_WIDTH=256 "$native" "$work/probe" --frames 2 > "$work/pn256.txt" 2> /dev/null
+has renderer "$work/pn256.txt" "128 bits" "the native build ignores this computer's environment (LP_NATIVE_VECTOR_WIDTH=256 was set)"
 has clock "$work/pn.txt" "probe ready unix=946684800 date=2000-01-01T00:00:00 ticks=0" "the game starts on 2000-01-01, the default Starting Clock, at time 0"
 has clock "$work/pn.txt" "probe f=60 ticks=1000000 delta=0.016667 unix=946684801.000" "after 60 frames a second has gone by, and each frame is 1/60 s"
 GATE_STALL_US=30000 "$native" "$work/probe" --frames 60 "${probe_movie[@]}" > "$work/stall.txt" 2> /dev/null

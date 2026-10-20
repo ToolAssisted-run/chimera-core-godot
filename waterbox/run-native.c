@@ -8,8 +8,10 @@
  *
  * usage: run-native <workdir> [gate-harness options]
  */
+#define _GNU_SOURCE
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "gate-harness.h"
@@ -57,6 +59,10 @@ int main(int argc, char **argv)
 	static struct gate_opts o;
 	if (!gate_parse_opts(argc, argv, 2, &o))
 		return 2;
+	/* the sandbox's environment and nothing of this computer's: Mesa and
+	 * LLVM read theirs (LP_NATIVE_VECTOR_WIDTH would change llvmpipe's code) */
+	clearenv();
+	setenv("WATERBOX", "1", 1);
 	if (chdir(argv[1]) != 0)
 	{
 		perror(argv[1]);

@@ -11,7 +11,8 @@ exported games (4.7.2), built for Chimera's sandbox, and produces one file,
 New, and not published yet.
 
 - Godot 4 games written in GDScript, drawn with Godot's Compatibility
-  renderer (OpenGL 3.3) on a software OpenGL inside the core. A game made
+  renderer (OpenGL 3.3) on a software OpenGL inside the core (Mesa's
+  llvmpipe, made to generate the same code on every computer). A game made
   for the Forward+ or Mobile renderer is drawn by the Compatibility renderer
   too, which lacks some of their effects.
 - Tried: Godot's "Dodge the Creeps" demo and this repository's probe game.
@@ -20,8 +21,8 @@ New, and not published yet.
   run does. No commercial game has been tried yet.
 - Not there: games written in C# (Godot's .NET version) and games that need
   native extensions (GDExtension libraries), which the sandbox cannot load;
-  Godot 3 games; the GPU. The software OpenGL is slow: about 10 frames a
-  second for a small 2D game on a fast computer.
+  Godot 3 games; the GPU. On a fast computer a small 2D game runs at about
+  60 frames a second, a 1600x960 one at about 8, and a 3D one at about 1.
 
 ## What you bring
 
@@ -59,5 +60,6 @@ is the design log: what was decided, why, and what was measured.
 
 This repository's own code is MIT, and so is Godot. The libraries inside
 Godot are under their own permissive licences, listed in Godot's
-`COPYRIGHT.txt`; the software OpenGL is Mesa (MIT). The package carries every
-licence text. See [LICENSE](LICENSE).
+`COPYRIGHT.txt`; the software OpenGL is Mesa (MIT) with LLVM (Apache 2.0
+with the LLVM exception). The package carries every licence text. See
+[LICENSE](LICENSE).

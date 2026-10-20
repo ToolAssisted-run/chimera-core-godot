@@ -36,6 +36,8 @@ mb="$(cd "$mb" && pwd)"
 # the guest's OpenGL (Mesa, built once into build/mesa), Godot for the guest,
 # then the link (link-core.sh runs check-wbx before it calls core.wbx built)
 mkdir -p "$root/build"
+bash "$here/build-llvm.sh" native > "$root/build/package-llvm.log" 2>&1 && bash "$here/build-llvm.sh" guest -m "$mb" >> "$root/build/package-llvm.log" 2>&1 || {
+	tail -20 "$root/build/package-llvm.log" >&2; echo "the LLVM build failed (build/package-llvm.log)" >&2; exit 1; }
 bash "$here/setup-mesa.sh" -m "$mb" > "$root/build/package-mesa.log" 2>&1 || {
 	tail -20 "$root/build/package-mesa.log" >&2; echo "the guest Mesa build failed (build/package-mesa.log)" >&2; exit 1; }
 bash "$here/build-godot.sh" guest -m "$mb" > "$root/build/package-godot.log" 2>&1 || {

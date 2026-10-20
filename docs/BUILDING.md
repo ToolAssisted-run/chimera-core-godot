@@ -4,8 +4,8 @@
 
 - Linux on x86-64, with GCC 14 (the guest kit's compiler is the system's,
   over miniBox's sysroot), Python 3, git, curl, `patch`, binutils.
-- meson, ninja and Python's `mako` and `packaging` (Mesa's build;
-  `setup-mesa.sh` makes a private venv when they are missing).
+- meson, ninja, cmake and Python's `mako` and `packaging` (LLVM's and
+  Mesa's builds; `setup-mesa.sh` makes a private venv when they are missing).
 - SCons: `build-godot.sh` installs a pinned SCons under `build/tools` with
   pip the first time.
 - A Chimera checkout beside this one, with miniBox built: its host library
@@ -30,9 +30,13 @@ build copies it to `build/godot-<flavour>` and applies `patches/` there.
 
 All from the repository's root, with `-m <chimera>/extern/chimera-common-minibox`:
 
-1. `waterbox/setup-mesa.sh -m <mb>` and `waterbox/setup-mesa.sh -n`: Mesa
-   24.0.9's softpipe and OSMesa for the guest and for this computer
-   (downloads the tarball once into `build/deps`; about 5 minutes each).
+1. `waterbox/build-llvm.sh native` and `waterbox/build-llvm.sh guest -m
+   <mb>`: LLVM 18.1.8 for llvmpipe (downloads the source once into
+   `build/deps`; most of an hour each on 16 threads; the guest needs the
+   native one's table generator). Then `waterbox/setup-mesa.sh -n` and
+   `waterbox/setup-mesa.sh -m <mb>`: Mesa 24.0.9's llvmpipe and OSMesa for
+   this computer and the guest, with `waterbox/mesa-patches/` applied
+   (about 5 minutes each).
 2. `waterbox/make-native-libm.sh <mb>`: the sandbox's own math functions for
    the native build (`build/native-libm`).
 3. `waterbox/build-godot.sh native -m <mb>` and `waterbox/build-godot.sh
@@ -45,6 +49,10 @@ All from the repository's root, with `-m <chimera>/extern/chimera-common-minibox
 5. `waterbox/build-package.sh -m <mb>` (or `-r <chimera>` to install it in
    that checkout's `build/Cores`): `godot.chimeraCore`. It does steps 1, 3
    and 4 for the guest itself.
+
+`waterbox/jit-symbols.c` is linked into both builds: it answers LLVM's
+`dlopen(NULL)` (the sandbox's C library has no dynamic loader) and gives
+no function by name but its short table, in both builds alike.
 
 ## The tests
 
@@ -77,6 +85,8 @@ test game: an export is not promised to be the same bytes twice.
 ## Troubleshooting
 
 - "missing required export Init": the Chimera module was not linked whole.
+- A crash in `lp_build_create_jit_compiler_for_module` in the sandbox: LLVM
+  made no JIT; `jit-symbols.c` was not linked with `--wrap=dlopen`.
 - A Godot build that stops in a few seconds with no error: `patches/` did
   not apply, or `build/godot-<flavour>/.chimera-source` is stale; remove
   that folder.

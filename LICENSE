@@ -35,7 +35,10 @@ The core package built from it (godot.chimeraCore) also contains:
   Linietsky and Ariel Manzur;
 - the third-party libraries Godot keeps in its thirdparty/ folder, each under
   its own license, all listed with their texts in extern/godot/COPYRIGHT.txt;
-- Mesa 24.0.9 (MIT), the software OpenGL the core draws with.
+- Mesa 24.0.9 (MIT), the software OpenGL the core draws with, with the
+  patches in waterbox/mesa-patches applied;
+- LLVM 18.1.8 (Apache 2.0 with the LLVM exception), which Mesa's llvmpipe
+  compiles the shaders with.
 
 Each package carries these texts in its licenses/ folder
 (waterbox/package-licenses.json says which). The package carries no game.

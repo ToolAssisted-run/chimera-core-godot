@@ -34,6 +34,12 @@ godot_libs() {
 		esac
 	done
 }
+llvm_libs() {
+	# llvmpipe's LLVM (build-llvm.sh), every library; only what Mesa calls is linked
+	local dir="$root/build/llvm-$1/lib"
+	ls "$dir"/libLLVM*.a > /dev/null 2>&1 || { echo "link-core: no LLVM in $dir (run build-llvm.sh $1)" >&2; exit 1; }
+	ls "$dir"/libLLVM*.a | sort
+}
 mesa_parts() {
 	local dir="$root/build/mesa/$1"
 	local target
@@ -49,11 +55,13 @@ case "$flavour" in
 		mkdir -p "$out"
 		[ -f "$root/build/native-libm/libchimera-m.a" ] || bash "$here/make-native-libm.sh" "$minibox"
 		gcc -O2 -g -c -o "$out/run-native.o" "$here/run-native.c" -I"$here"
+		gcc -O2 -c -o "$out/jit-symbols.o" "$here/jit-symbols.c"
 		# shellcheck disable=SC2046
-		g++ -no-pie -o "$out/run-native" "$out/run-native.o" \
-			-Wl,--start-group $(godot_libs native) $(mesa_parts build-native) \
+		g++ -no-pie -o "$out/run-native" "$out/run-native.o" "$out/jit-symbols.o" \
+			-Wl,--start-group $(godot_libs native) $(mesa_parts build-native) $(llvm_libs native) \
 			"$root/build/native-libm/libchimera-m.a" -Wl,--end-group \
 			$(cat "$root/build/native-libm/wrap-flags") \
+			-Wl,--wrap=dlopen -Wl,--wrap=dlsym -Wl,--wrap=dlclose \
 			-lpthread -ldl -lm
 		echo "link-core: $out/run-native"
 		;;
@@ -62,6 +70,8 @@ case "$flavour" in
 		mkdir -p "$out"
 		mb_cpp="$minibox/build/meson-cpp"
 		sr="$mb_cpp/guest-sysroot"
+		gcc -specs "$sr/lib/musl-gcc.specs" -O2 -mcmodel=large -mno-red-zone -mstack-protector-guard=global \
+			-fno-stack-protector -fno-pic -fno-pie -fcf-protection=none -c -o "$out/jit-symbols.o" "$here/jit-symbols.c"
 		# shellcheck disable=SC2046
 		g++ -specs "$sr/lib/musl-gcc.specs" -static -no-pie \
 			-Wl,--eh-frame-hdr -Wl,-O2 -Wl,--no-relax -Wl,--strip-debug -Wl,-z,stack-size=8388608 \
@@ -69,8 +79,9 @@ case "$flavour" in
 			-Wl,-u,pthread_mutexattr_init -Wl,-u,pthread_mutexattr_settype -Wl,-u,pthread_mutexattr_destroy \
 			-Wl,-u,pthread_once -Wl,-u,pthread_cond_wait -Wl,-u,pthread_cond_broadcast -Wl,-u,pthread_key_create \
 			-o "$out/core.wbx.tmp" \
-			-Wl,--start-group $(godot_libs guest) $(mesa_parts build-guest2) -Wl,--end-group \
-			"$mb_cpp/source/guest/cxxglue.c.o" "$mb_cpp/source/guest/emulibc.c.o" \
+			-Wl,--start-group $(godot_libs guest) $(mesa_parts build-guest2) $(llvm_libs guest) -Wl,--end-group \
+			"$mb_cpp/source/guest/cxxglue.c.o" "$mb_cpp/source/guest/emulibc.c.o" "$out/jit-symbols.o" \
+			-Wl,--wrap=dlopen -Wl,--wrap=dlsym -Wl,--wrap=dlclose \
 			-L"$sr/lib" -lstdc++ -lm -lgcc -lgcc_eh -lc
 		sh "$minibox/source/guest/check-wbx.sh" "$out/core.wbx.tmp"
 		mv "$out/core.wbx.tmp" "$out/core.wbx"

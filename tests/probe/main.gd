@@ -24,6 +24,7 @@ func _ready() -> void:
 	f = FileAccess.open("user://saves/slot.dat", FileAccess.WRITE)
 	f.store_string("slot of frame %d" % Engine.get_process_frames())
 	f = null
+	print("probe renderer=[%s] [%s]" % [RenderingServer.get_video_adapter_name(), RenderingServer.get_video_adapter_api_version()])
 	print("probe ready unix=%d date=%s ticks=%d rnd=%d randf=%.6f window=%s os=%s saved=[%s] slot=[%s]" % [
 		int(Time.get_unix_time_from_system()),
 		Time.get_datetime_string_from_system(true),

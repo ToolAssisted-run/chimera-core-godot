@@ -26,6 +26,7 @@ for miniBox's sandbox with a Chimera module in it. The user brings a game's
 ## Commands, in order
 
     mb=<chimera>/extern/chimera-common-minibox
+    waterbox/build-llvm.sh native && waterbox/build-llvm.sh guest -m $mb
     waterbox/setup-mesa.sh -m $mb && waterbox/setup-mesa.sh -n
     waterbox/make-native-libm.sh $mb
     waterbox/build-godot.sh native -m $mb && waterbox/build-godot.sh guest -m $mb
@@ -41,6 +42,8 @@ for miniBox's sandbox with a Chimera module in it. The user brings a game's
   in `chimera_os` that is the same in both builds.
 - The native reference links the sandbox's math (`make-native-libm.sh`);
   never let it fall back to glibc's.
+- llvmpipe sees one CPU everywhere (mesa-patches/0001); nothing may give
+  Mesa or LLVM the host's CPU features or core count.
 - A change to `waterbox.config`'s buttons changes `chimera_core.cpp`'s table
   and `input-names.h` the same way, in the same order.
 - Every new test is broken on purpose once and seen to fail.

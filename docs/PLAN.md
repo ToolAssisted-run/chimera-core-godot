@@ -21,11 +21,11 @@ built for it.
   is mixed on request by the "Dummy" audio driver without its thread. The
   core does exactly that.
 - **The picture.** Godot's Compatibility renderer is OpenGL 3.3. It draws on
-  Mesa's softpipe through OSMesa, compiled into the core (the same Mesa
-  24.0.9 as the RSDKv4, touchHLE and PCSX2 cores). The GPU bridge is for
-  later and never the only renderer.
+  Mesa's llvmpipe through OSMesa, compiled into the core (Mesa 24.0.9, as
+  the RSDKv4, touchHLE and PCSX2 cores have it, with LLVM 18.1.8). The GPU
+  bridge is for later and never the only renderer.
 - **A recompiler?** GDScript is interpreted. PCRE2's JIT (for RegEx) is built
-  out.
+  out. llvmpipe compiles shaders with LLVM, pinned to one CPU (below).
 - **What the user brings.** The game's `.pck`, or its executable with the
   pack inside. Nothing else.
 - **What CI can run.** Godot's "Dodge the Creeps" demo (MIT), exported to a
@@ -109,8 +109,7 @@ Godot and in Mesa alike.
 - The probe: the clock (1/60 s a frame, 2000-01-01 at power-on), Shift+A
   typing "A", the mouse's pixel, a double click, the wheel, the controller's
   button and axes.
-- Speed: about 10 frames a second for Dodge the Creeps (480x720), in both
-  builds, on this machine (a 20-thread x86-64).
+- Speed: see "The software OpenGL" below.
 - Through Chimera: `chimera-run` from a movie file and from a project, and
   Chimera's window under Xvfb, all draw the reference's last picture.
 
@@ -133,6 +132,48 @@ Godot and in Mesa alike.
   before the renderer starts. An `override.cfg` did this at first; a game
   may forbid overrides, or bring its own, so it is gone.
 
+## The software OpenGL: softpipe, then llvmpipe (2026-10-20)
+
+The first build drew with softpipe, as the RSDK cores do. A profile
+(callgrind, Dodge the Creeps in play) put 70% of all the time in softpipe's
+shader interpreter (`tgsi_exec.c`): every pixel of Godot's canvas shader
+interpreted. Measured on this machine: Dodge the Creeps (480x720) 10 frames
+a second, the 2D platformer demo (1600x960) 0.85, the 3D platformer demo
+(1152x648, made for Forward+) 0.26.
+
+llvmpipe compiles each shader to machine code with LLVM. Two things make
+that safe for a machine that must be the same everywhere:
+
+- **One CPU on every computer** (mesa-patches/0001, `CHIMERA_PINNED_CPU`):
+  Mesa reports an x86-64 with SSE2 and nothing newer, and one processor;
+  LLVM targets the baseline `x86-64`. The code made for a shader is then the
+  same bytes whatever CPU runs it, and with one processor llvmpipe
+  rasterises on the calling thread and starts none (the sandbox has one).
+  The CPUID instruction cannot be trapped in a sandbox, so this is the only
+  way to keep the host's features out.
+- **No functions found by name.** LLVM's JIT first opens the program with
+  `dlopen(NULL)`, which the sandbox's static C library refuses ("Dynamic
+  loading not supported"), and Mesa then crashed on the missing JIT.
+  `waterbox/jit-symbols.c` answers dlopen, dlsym and dlclose in both builds
+  from one short table, so the native build cannot find by name what the
+  sandbox cannot. Over the demos, the generated code asked for no name.
+
+LLVM is built by `waterbox/build-llvm.sh` (X86 only, no threads, static, RTTI
+on to match Mesa; without CET in both flavours so the code LLVM generates is
+the same, as chimera-core-rpcs3 learnt); only its libraries are built for the
+guest. The core grew from 125 MB to 187 MB.
+
+Measured with llvmpipe, native = sandbox in every picture as before (the
+pictures differ from softpipe's in rounding at the edges; the game is the
+same): Dodge the Creeps 600 frames in 9.3 s in the sandbox (65 a second,
+from 12), the 2D platformer 8 a second (from 0.85), the 3D platformer about
+1 (from 0.26).
+
+The GPU bridge would be faster still, but it gives the renderer a new
+OpenGL context at every savestate load, and Godot's renderer cannot rebuild
+its textures, buffers and shaders from the machine's memory: that is a port
+of its storage classes, and the owner's call.
+
 ## Sharp edges
 
 - `pkill -f` with the name of a running script kills the shell that typed it
@@ -146,6 +187,6 @@ Godot and in Mesa alike.
 - A real game from boot to play, and a game with a `.pck` inside its
   executable.
 - Windows: the frontend test's scenario on the Windows build.
-- Speed: where the frame goes on softpipe; the GPU bridge as an option.
+- Speed: the 3D renderer on llvmpipe; the GPU bridge as an option.
 - What a TAS needs from a Godot game's memory: its scripts' variables as a
   property table.

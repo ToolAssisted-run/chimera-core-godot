@@ -113,7 +113,7 @@ meson=""
 if command -v meson >/dev/null && python3 -c "import mako, packaging" 2>/dev/null; then
 	meson="$(command -v meson)"
 else
-	venv="${MESA_BUILD_VENV:-$HOME/.cache/chimera-mesa-build-venv}"
+	venv="${MESA_BUILD_VENV:-$root/build/mesa-build-venv}"
 	if [ ! -x "$venv/bin/meson" ]; then
 		python3 -m venv "$venv" || {
 			echo "mesa: no usable meson - install python3-venv, or meson plus python3-mako" >&2

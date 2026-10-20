@@ -16,7 +16,9 @@ core refuses a game of another version and says which core to use.
 
 ## Status
 
-New, and not published yet.
+Published: each push to `main` that passes the tests publishes a `dev`
+release, and a dated nightly is made once a day when `main` moved. Chimera's
+Core Manager lists it.
 
 - Godot 4 games written in GDScript, drawn with Godot's Compatibility
   renderer (OpenGL 3.3) on a software OpenGL inside the core (Mesa's

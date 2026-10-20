@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include "chimera_version.h"
+
 #include "drivers/unix/os_unix.h"
 
 class MainLoop;
@@ -83,7 +85,9 @@ public:
 	virtual String get_executable_path() const override;
 	virtual uint64_t get_embedded_pck_offset() const override { return 0; }
 	virtual Error set_cwd(const String &p_cwd) override { return ERR_UNAVAILABLE; }
+#if CHIMERA_GODOT_MINOR >= 6
 	virtual String get_cwd() const override { return "/game"; }
+#endif
 
 	virtual String get_user_data_dir(const String &p_user_dir) const override { return "/user"; }
 	virtual String get_data_path() const override { return "/user"; }
@@ -112,8 +116,10 @@ public:
 
 	virtual Error open_dynamic_library(const String &p_path, void *&p_library_handle, GDExtensionData *p_data = nullptr) override { return ERR_UNAVAILABLE; }
 
+#if CHIMERA_GODOT_MINOR >= 5
 	virtual String multibyte_to_string(const String &p_encoding, const PackedByteArray &p_array) const override { return String(); }
 	virtual PackedByteArray string_to_multibyte(const String &p_encoding, const String &p_string) const override { return PackedByteArray(); }
+#endif
 
 	OS_Chimera();
 };

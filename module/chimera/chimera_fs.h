@@ -26,6 +26,13 @@
 #include "core/io/file_access.h"
 #include "core/templates/hash_map.h"
 
+#include "chimera_version.h"
+
+#ifndef GDSOFTCLASS
+// before 4.5 a class of this kind declares nothing
+#define GDSOFTCLASS(m_class, m_inherits)
+#endif
+
 // A file or folder. Not a Godot Object: the core makes the tree before
 // Godot's object database exists, while Godot is not yet set up.
 struct ChimeraFSNode {
@@ -144,8 +151,10 @@ public:
 	virtual bool file_exists(const String &p_name) override;
 
 	virtual uint64_t _get_modified_time(const String &p_file) override;
+#if CHIMERA_GODOT_MINOR >= 5
 	virtual uint64_t _get_access_time(const String &p_file) override { return _get_modified_time(p_file); }
 	virtual int64_t _get_size(const String &p_file) override;
+#endif
 
 	virtual BitField<FileAccess::UnixPermissionFlags> _get_unix_permissions(const String &p_file) override { return 0644; }
 	virtual Error _set_unix_permissions(const String &p_file, BitField<FileAccess::UnixPermissionFlags> p_permissions) override { return OK; }

@@ -16,6 +16,7 @@
 /* and the sound of exactly that frame is mixed.                          */
 /**************************************************************************/
 
+#include "chimera_compat.h"
 #include "chimera_display.h"
 #include "chimera_fs.h"
 #include "chimera_os.h"
@@ -363,6 +364,69 @@ static String _pack_host_name() {
 	return String("game");
 }
 
+/* ---- which Godot made the game ------------------------------------------- */
+
+// The version a pack's header says it was exported with: at its start for a
+// .pck, or at the end of the executable it was embedded in, as Godot itself
+// looks (core/io/file_access_pack.cpp). False when it is not a Godot pack.
+static bool _pack_version(const ChimeraFSRef &p_pack, uint32_t &r_major, uint32_t &r_minor, uint32_t &r_patch) {
+	if (p_pack.is_null() || !p_pack->is_mounted()) {
+		return false;
+	}
+	const int fd = p_pack->mount_fd;
+	const uint64_t len = p_pack->mount_size;
+	auto read_at = [fd](uint64_t p_at, void *r_buf, size_t p_size) {
+		return ::pread(fd, r_buf, p_size, (off_t)p_at) == (ssize_t)p_size;
+	};
+	const uint32_t magic_gdpc = 0x43504447;
+	uint64_t start = 0;
+	uint32_t magic = 0;
+	if (!read_at(0, &magic, 4) || magic != magic_gdpc) {
+		// embedded: ... the pack, its size (64 bits), the magic again
+		uint64_t size = 0;
+		if (len < 12 || !read_at(len - 4, &magic, 4) || magic != magic_gdpc || !read_at(len - 12, &size, 8) || size + 12 > len) {
+			return false;
+		}
+		start = len - 12 - size;
+		if (!read_at(start, &magic, 4) || magic != magic_gdpc) {
+			return false;
+		}
+	}
+	uint32_t header[4];
+	if (!read_at(start + 4, header, sizeof header)) {
+		return false;
+	}
+	r_major = header[1];
+	r_minor = header[2];
+	r_patch = header[3];
+	return true;
+}
+
+// Refuses a game this core's Godot is not the one for, saying which is.
+static bool _check_pack_version(const ChimeraFSRef &p_pack) {
+	uint32_t major = 0, minor = 0, patch = 0;
+	if (!_pack_version(p_pack, major, minor, patch)) {
+		return true; // not a pack Godot knows; Godot says so itself
+	}
+	if (major == 4 && minor >= CHIMERA_ACCEPTS_MINOR_FROM && minor <= CHIMERA_GODOT_MINOR) {
+		return true;
+	}
+	if (major != 4) {
+		snprintf(load_error, sizeof load_error, "this game was made with Godot %u.%u.%u; the Godot cores run games of Godot 4 (4.%d to 4.%d)",
+				major, minor, patch, CHIMERA_OLDEST_CORE_MINOR, CHIMERA_NEWEST_CORE_MINOR);
+	} else if (minor > CHIMERA_NEWEST_CORE_MINOR) {
+		snprintf(load_error, sizeof load_error, "this game was made with Godot %u.%u.%u, newer than every Godot core (the newest runs Godot 4.%d games)",
+				major, minor, patch, CHIMERA_NEWEST_CORE_MINOR);
+	} else if (minor < CHIMERA_OLDEST_CORE_MINOR) {
+		snprintf(load_error, sizeof load_error, "this game was made with Godot %u.%u.%u: open it with the Godot 4.%d core, which also runs games of older Godot 4 versions",
+				major, minor, patch, CHIMERA_OLDEST_CORE_MINOR);
+	} else {
+		snprintf(load_error, sizeof load_error, "this game was made with Godot %u.%u.%u: open it with the Godot 4.%u core (this one runs Godot 4.%d games)",
+				major, minor, patch, minor, CHIMERA_GODOT_MINOR);
+	}
+	return false;
+}
+
 /* ---- save data ---------------------------------------------------------- */
 
 // A whole file Chimera mounted, read into memory (save files are small).
@@ -483,6 +547,9 @@ ECL_EXPORT int Init(void) {
 	String pack_path = "/game/" + pack_name;
 	if (!ChimeraFS::mount(pack_path, pack_host.utf8().get_data())) {
 		snprintf(load_error, sizeof load_error, "the game's pack (%s) could not be opened", pack_host.utf8().get_data());
+		return 0;
+	}
+	if (!_check_pack_version(ChimeraFS::find(pack_path))) {
 		return 0;
 	}
 	if (pack_name.get_extension().to_lower() == "pck") {

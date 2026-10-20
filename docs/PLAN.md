@@ -174,6 +174,30 @@ OpenGL context at every savestate load, and Godot's renderer cannot rebuild
 its textures, buffers and shaders from the machine's memory: that is a port
 of its storage classes, and the owner's call.
 
+## A core per Godot version (user-decided, 2026-10-20)
+
+Since 4.3, an exported game's scripts are compiled to a token format that
+only the same Godot version loads (`TOKENIZER_VERSION` must match exactly),
+and a pack made by a newer Godot is refused by an older one. The owner chose
+cores for 4.4, 4.5 and 4.6 beside this one: chimera-core-godot44, -godot45
+and -godot46, each its own package and roster entry (one package holds one
+engine), each this repository's code with its own Godot pinned (4.4.1,
+4.5.2, 4.6.3) and test games exported by that version's editor.
+
+- One module for all of them: `chimera_version.h` gives the minor version,
+  `chimera_compat.h` the differences - the display server's headers moved to
+  `servers/display/` in 4.6 and its enums to `DisplayServerEnums` in 4.7;
+  `GDSOFTCLASS`, `get_cwd`, the file access and multibyte calls are newer
+  than 4.4 or 4.5.
+- Every core reads the version from the pack's header (at the start of a
+  .pck, at the end of an executable it is embedded in) and refuses a game of
+  another version, naming the core for it. The 4.4 core also takes games of
+  4.0 to 4.3, for which there is no core. Tested by the `version` tests:
+  packs with only a header, of another version, embedded, of Godot 3, of 4.2
+  and of the core's own.
+- Godot 4.4 writes the objects of a module outside its tree beside the
+  module's sources: `*.o` is ignored.
+
 ## Sharp edges
 
 - `pkill -f` with the name of a running script kills the shell that typed it

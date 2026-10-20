@@ -50,3 +50,6 @@ for miniBox's sandbox with a Chimera module in it. The user brings a game's
 - Write in plain language; prose is ASCII. Commits: `type(scope): what
   changed`, body with how it was tested, Chimera's trailers.
 - Stop a build by its PID, never with `pkill -f`.
+- `module/`, `waterbox/` and `tests/` (but the test games and
+  `tests/make-test-game.sh`'s editor) are the same files in the four Godot
+  cores (godot, godot46, godot45, godot44): a change here is made there too.

@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "servers/display/display_server_headless.h"
+#include "chimera_compat.h"
 
 class DisplayServerChimera : public DisplayServerHeadless {
 	GDSOFTCLASS(DisplayServerChimera, DisplayServerHeadless);

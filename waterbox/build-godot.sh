@@ -153,5 +153,21 @@ fi
 
 cd "$src"
 echo "build-godot: scons ${opts[*]}"
-$scons "${opts[@]}" ${SCONS_EXTRA:-}
+log="$root/build/scons-$flavour.log"
+set +e
+$scons "${opts[@]}" ${SCONS_EXTRA:-} 2>&1 | tee "$log"
+status=${PIPESTATUS[0]}
+set -e
+if [ "$status" != 0 ]; then
+	# Before 4.6 Godot has no library_type: it links a Godot program after
+	# the libraries, which the core does not use and which cannot link for
+	# the sandbox. When that link is the only thing that failed, the
+	# libraries are all there.
+	failed="$(grep '^scons: \*\*\* \[' "$log" | grep -v '^scons: \*\*\* \[bin/godot\.linuxbsd\.' || true)"
+	if [ -n "$failed" ] || ! grep -q '^scons: \*\*\* \[bin/godot\.linuxbsd\.' "$log"; then
+		echo "build-godot: the build failed" >&2
+		exit 1
+	fi
+	echo "build-godot: only Godot's own program did not link (Godot before 4.6 always makes one); the libraries are built"
+fi
 echo "build-godot: $flavour libraries in $src"

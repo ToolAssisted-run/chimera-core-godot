@@ -25,9 +25,11 @@ minibox="$(cd "$minibox" && pwd)"
 
 godot_libs() {
 	# every library SCons made for this flavour, in a stable order; the
-	# Chimera module whole, since only the sandbox calls its functions
+	# Chimera module whole, since only the sandbox calls its functions.
+	# Godot 4.5 and later gather them in bin/; 4.4 leaves each beside its
+	# sources.
 	local lib
-	find "$root/build/godot-$1/bin" -name "*.$1.a" | sort | while read -r lib; do
+	find "$root/build/godot-$1" -name "*.$1.a" | sort | while read -r lib; do
 		case "$lib" in
 			*/libmodule_chimera.*) echo "-Wl,--whole-archive $lib -Wl,--no-whole-archive" ;;
 			*) echo "$lib" ;;

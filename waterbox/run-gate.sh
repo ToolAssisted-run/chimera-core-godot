@@ -33,6 +33,9 @@
 #   renderer     the game draws on llvmpipe with the pinned CPU's 128-bit
 #                vectors, in both builds, whatever the computer's CPU or
 #                environment
+#   version      a game of another Godot version is refused, naming the core
+#                to use (as a .pck and embedded in an executable); a game of
+#                this core's own version is not
 #   refusals     a pack that is not there, and a file that is not a pack:
 #                each says why
 #
@@ -236,6 +239,45 @@ mkdir -p "$work/seedbad"; cp "$work/bad.zip" "$work/seedbad/user.zip"
 seed seedbad '{"pack":["probe.pck"],"savedata":["user.zip"]}'
 "$native" "$work/seedbad" --frames 1 > "$work/seedbad.txt" 2> /dev/null
 has "save data" "$work/seedbad.txt" "loadError=the save data zip user.zip holds ../escape.txt, which is not a name in user://" "a zip holding a name outside user:// is refused, saying which"
+
+echo "== the game's Godot version"
+# A pack says which Godot exported it; a core runs its own version's games
+# (the 4.4 core also the older ones) and names the core for any other. The
+# packs here are only a header, which is all the check reads, as a .pck and
+# embedded at the end of an executable.
+minor="$(sed -n 's/^minor = //p' "$root/extern/godot/version.py")"
+mkpack() { # mkpack <dir> <file> <major> <minor> [embedded]
+	mkdir -p "$work/$1"
+	python3 - "$work/$1/$2" "$3" "$4" "${5:-}" <<'PY'
+import struct, sys
+path, major, minor, emb = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4] == "embedded"
+pack = struct.pack("<4sIIII", b"GDPC", 3, major, minor, 1) + b"\0" * 64
+data = (b"\x7fELF" + b"\0" * 1000 + pack + struct.pack("<Q", len(pack)) + b"GDPC") if emb else pack
+open(path, "wb").write(data)
+PY
+	printf '{"pack":["%s"]}' "$2" > "$work/$1/slots"
+	printf '{}' > "$work/$1/settings"
+}
+other=$((minor == 7 ? 6 : 7))
+mkpack vother game.pck 4 "$other"
+"$native" "$work/vother" --frames 1 > "$work/vother.txt" 2> /dev/null
+has version "$work/vother.txt" "loadError=this game was made with Godot 4.$other.1: open it with the Godot 4.$other core (this one runs Godot 4.$minor games)" "a game of Godot 4.$other is refused, naming its core"
+mkpack vemb game.x86_64 4 "$other" embedded
+"$wbx" "$core" "$work/vemb" --frames 1 > "$work/vemb.txt" 2> /dev/null
+has version "$work/vemb.txt" "loadError=this game was made with Godot 4.$other.1: open it with the Godot 4.$other core" "and so is one embedded in its executable, in the sandbox"
+mkpack v3 game.pck 3 5
+"$native" "$work/v3" --frames 1 > "$work/v3.txt" 2> /dev/null
+has version "$work/v3.txt" "loadError=this game was made with Godot 3.5.1; the Godot cores run games of Godot 4" "a Godot 3 game is refused"
+mkpack vold game.pck 4 2
+"$native" "$work/vold" --frames 1 > "$work/vold.txt" 2> /dev/null
+if [ "$minor" -le 4 ]; then
+	hasnt version "$work/vold.txt" "this game was made with Godot" "a Godot 4.2 game is taken by this core, the oldest"
+else
+	has version "$work/vold.txt" "loadError=this game was made with Godot 4.2.1: open it with the Godot 4.4 core, which also runs games of older Godot 4 versions" "a Godot 4.2 game is sent to the 4.4 core"
+fi
+mkpack vown game.pck 4 "$minor"
+"$native" "$work/vown" --frames 1 > "$work/vown.txt" 2> /dev/null
+hasnt version "$work/vown.txt" "this game was made with Godot" "a game of this core's own version is not refused for its version"
 
 echo "== refusals"
 mkdir -p "$work/nopack"

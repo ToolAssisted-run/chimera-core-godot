@@ -36,7 +36,7 @@ void ChimeraFS::initialize() {
 // An absolute path with no ".", "..", empty or trailing parts. A relative
 // path is taken from /game, which is the working directory Godot is told.
 String ChimeraFS::normalize(const String &p_path) {
-	String p = p_path.replace_char('\\', '/');
+	String p = p_path.replace("\\", "/");
 	if (!p.begins_with("/")) {
 		p = "/game/" + p;
 	}
@@ -402,10 +402,12 @@ uint64_t FileAccessChimera::_get_modified_time(const String &p_file) {
 	return n.is_valid() ? n->modified_time : 0;
 }
 
+#if CHIMERA_GODOT_MINOR >= 5
 int64_t FileAccessChimera::_get_size(const String &p_file) {
 	ChimeraFSRef n = ChimeraFS::find(ChimeraFS::normalize(fix_path(p_file)));
 	return n.is_valid() && !n->dir ? (int64_t)n->size() : -1;
 }
+#endif
 
 bool FileAccessChimera::_get_read_only_attribute(const String &p_file) {
 	ChimeraFSRef n = ChimeraFS::find(ChimeraFS::normalize(fix_path(p_file)));

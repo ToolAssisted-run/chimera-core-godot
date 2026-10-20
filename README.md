@@ -6,6 +6,14 @@ frontend for tool-assisted speedruns, that plays games made with the
 exported games (4.7.2), built for Chimera's sandbox, and produces one file,
 `godot.chimeraCore`, that goes in Chimera's `Cores` folder.
 
+Each Godot 4 version has its core, because a game's compiled scripts only
+load in the version that exported them: this one runs Godot 4.7 games, and
+[4.6](https://github.com/ToolAssisted-run/chimera-core-godot46),
+[4.5](https://github.com/ToolAssisted-run/chimera-core-godot45) and
+[4.4](https://github.com/ToolAssisted-run/chimera-core-godot44) (which also
+takes games of 4.0 to 4.3) have theirs, built from this repository's code. A
+core refuses a game of another version and says which core to use.
+
 ## Status
 
 New, and not published yet.

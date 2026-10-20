@@ -10,7 +10,6 @@
 #include "chimera_fs.h"
 
 #include "core/os/main_loop.h"
-#include "servers/display/display_server.h"
 
 #include <time.h>
 

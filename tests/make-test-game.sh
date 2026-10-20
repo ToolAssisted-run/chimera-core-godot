@@ -1,10 +1,14 @@
 #!/bin/bash
-# Remakes tests/dodge-the-creeps.pck, the game the tests play: Godot's own
-# "Dodge the Creeps" demo (godot-demo-projects, MIT licensed, the licence is
-# tests/dodge-the-creeps.LICENSE.md), exported to a .pck by the Godot 4.7.2
-# editor for Linux, with the export preset below. The .pck in the repository
-# is the one the tests were made against; an export is not promised to come
-# out byte for byte the same twice, so a remade one is a new test game.
+# Remakes the two games the tests play, exported to .pck files by the Godot
+# 4.7.2 editor for Linux, with the export preset below:
+#   tests/dodge-the-creeps.pck  Godot's own "Dodge the Creeps" demo
+#                               (godot-demo-projects, MIT licensed, the licence
+#                               is tests/dodge-the-creeps.LICENSE.md);
+#   tests/probe.pck             this repository's probe (tests/probe), which
+#                               prints what a game learns from the machine.
+# The .pck files in the repository are the ones the tests were made against;
+# an export is not promised to come out byte for byte the same twice, so a
+# remade one is a new test game.
 #
 # Usage: tests/make-test-game.sh <work folder>   (downloads about 80 MB)
 set -euo pipefail
@@ -28,8 +32,9 @@ if [ ! -d demos ]; then
 	git clone -q https://github.com/godotengine/godot-demo-projects.git demos
 fi
 git -C demos checkout -q "$demos_commit"
-rm -rf dtc
+rm -rf dtc probe
 cp -r demos/2d/dodge_the_creeps dtc
+cp -r "$here/probe" probe
 cat > dtc/export_presets.cfg <<'PRESET'
 [preset.0]
 
@@ -54,5 +59,7 @@ texture_format/s3tc_bptc=true
 texture_format/etc2_astc=false
 binary_format/architecture="x86_64"
 PRESET
+cp dtc/export_presets.cfg probe/
 ( cd dtc && "$editor" --headless --import > ../import.log 2>&1 && "$editor" --headless --export-pack "Linux" "$here/dodge-the-creeps.pck" > ../export.log 2>&1 )
-echo "wrote $here/dodge-the-creeps.pck"
+( cd probe && "$editor" --headless --import > ../probe-import.log 2>&1 && "$editor" --headless --export-pack "Linux" "$here/probe.pck" > ../probe-export.log 2>&1 )
+echo "wrote $here/dodge-the-creeps.pck and $here/probe.pck"

@@ -12,6 +12,9 @@
  * changes it, as a mouse stays where it was put. A line starting with # is a
  * comment. --movie-at puts the movie's first line at a given step; --press
  * AT:TOKENS:LEN holds comma-separated tokens for LEN steps from step AT.
+ *
+ * GATE_STALL_US=<n> in the environment makes the harness wait n microseconds
+ * of the computer's time before every step: the machine must not notice.
  */
 #ifndef GATE_HARNESS_H
 #define GATE_HARNESS_H
@@ -20,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "input-names.h"
 
@@ -167,6 +171,8 @@ static int gate_run(const struct gate_core *c, const struct gate_opts *o)
 	for (int a = 0; a < GATE_AXIS_COUNT; a++)
 		axes[a] = sent[a] = gate_axis_neutral[a];
 	FILE *framesOut = o->framesOut ? fopen(o->framesOut, "w") : NULL;
+	const char *stall = getenv("GATE_STALL_US");
+	const long stallUs = stall ? strtol(stall, 0, 0) : 0;
 
 	for (long f = 0; f < frames; f++)
 	{
@@ -197,6 +203,8 @@ static int gate_run(const struct gate_core *c, const struct gate_opts *o)
 			sent[a] = axes[a];
 		}
 
+		if (stallUs > 0)
+			usleep((useconds_t)stallUs);
 		c->frame();
 
 		int w = 0, h = 0, n = 0;

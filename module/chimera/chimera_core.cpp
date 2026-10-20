@@ -244,9 +244,15 @@ static void _send_mouse_button(MouseButton p_button, bool p_pressed, float p_fac
 	Input::get_singleton()->parse_input_event(mb);
 }
 
+static bool _is_modifier(const InputDef &p_def) {
+	return p_def.kind == IN_KEY && (p_def.code == (int)Key::SHIFT || p_def.code == (int)Key::CTRL || p_def.code == (int)Key::ALT);
+}
+
 // The inputs of this frame, as the events a desktop would have sent since
 // the last one: the mouse moves first, then whatever was let go, then
-// whatever was pressed, each in the order of the list.
+// whatever was pressed, each in the order of the list - except that Shift,
+// Ctrl and Alt go down before the other keys of the same frame and come up
+// after them, as fingers do, so that Shift and A pressed together type "A".
 static void _send_inputs() {
 	DisplayServerChimera *ds = DisplayServerChimera::get_chimera_singleton();
 	int w = 1, h = 1;
@@ -271,10 +277,16 @@ static void _send_inputs() {
 		Input::get_singleton()->parse_input_event(mm);
 	}
 
-	for (int pass = 0; pass < 2; pass++) {
-		bool press = pass == 1;
+	// 0: releases of the others, 1: releases of the modifiers,
+	// 2: presses of the modifiers, 3: presses of the others
+	for (int pass = 0; pass < 4; pass++) {
+		bool press = pass >= 2;
+		bool modifiers = pass == 1 || pass == 2;
 		for (int i = 0; i < INPUT_COUNT; i++) {
 			const InputDef &def = inputs[i];
+			if (_is_modifier(def) != modifiers) {
+				continue;
+			}
 			bool want = machine->buttons[i] != 0;
 			if (def.kind == IN_WHEEL) {
 				// a wheel turns one notch for each frame it is held

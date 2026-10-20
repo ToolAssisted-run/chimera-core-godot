@@ -45,7 +45,10 @@ loads from beside its executable (a second `.pck`, data) go in the project's
   same value) and Godot's Log (Godot's `--verbose`).
 
 What a game writes to `user://` (its saves and settings) lives in the core's
-memory, starts empty, and is carried by savestates.
+memory, starts empty, and is carried by savestates. Emulator > Export Save
+Data writes it out (several files as a `.zip`), and a project's "Save data"
+slot puts such files, or that `.zip`, back in `user://` before the game
+starts.
 
 ## Building and testing
 

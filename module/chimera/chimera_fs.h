@@ -31,6 +31,8 @@
 struct ChimeraFSNode {
 	int refs = 0;
 	bool dir = false;
+	// /dev/null: takes every write and keeps nothing
+	bool discard = false;
 	// A file the project brought: read from a descriptor Chimera mounted.
 	int mount_fd = -1;
 	uint64_t mount_size = 0;

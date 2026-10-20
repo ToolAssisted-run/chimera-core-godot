@@ -21,15 +21,19 @@
 #include "chimera_os.h"
 
 #include "core/config/engine.h"
+#include "core/config/project_settings.h"
 #include "core/input/input.h"
 #include "core/os/main_loop.h"
 #include "main/main.h"
+#include "modules/zip/zip_reader.h"
 #include "servers/audio/audio_driver_dummy.h"
 
 #include <emulibc.h>
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 extern "C" {
 // chimera_wbx.c: the project's settings and files, through the guest kit
@@ -359,11 +363,82 @@ static String _pack_host_name() {
 	return String("game");
 }
 
-static const char override_cfg[] =
-		"; written by the Chimera core: settings a game cannot use inside it\n"
-		"[debug]\n"
-		"file_logging/enable_file_logging=false\n"
-		"file_logging/enable_file_logging.pc=false\n";
+/* ---- save data ---------------------------------------------------------- */
+
+// A whole file Chimera mounted, read into memory (save files are small).
+static bool _read_mounted(const char *p_name, Vector<uint8_t> &r_data) {
+	int fd = ::open(p_name, O_RDONLY);
+	if (fd < 0) {
+		return false;
+	}
+	off_t size = ::lseek(fd, 0, SEEK_END);
+	bool ok = size >= 0;
+	if (ok) {
+		r_data.resize(size);
+		ok = size == 0 || ::pread(fd, r_data.ptrw(), (size_t)size, 0) == (ssize_t)size;
+	}
+	::close(fd);
+	return ok;
+}
+
+// A save file name as Export Save Data wrote it: relative, '/' between
+// folders, nothing that climbs out.
+static bool _good_save_name(const String &p_name) {
+	if (p_name.is_empty() || p_name.begins_with("/") || p_name.contains_char('\\')) {
+		return false;
+	}
+	for (const String &part : p_name.split("/")) {
+		if (part.is_empty() || part == "." || part == "..") {
+			return false;
+		}
+	}
+	return true;
+}
+
+// The project's save data, put in user:// before the game starts, as Export
+// Save Data wrote it: each file under its own name, and a .zip (what the
+// export writes for several files) unpacked with its folders.
+static bool _seed_save_data() {
+	int count = chimera_slot_count("savedata");
+	for (int i = 0; i < count; i++) {
+		char name[512];
+		if (!chimera_slot_name("savedata", i, name, sizeof name)) {
+			continue;
+		}
+		Vector<uint8_t> data;
+		if (!_read_mounted(name, data)) {
+			snprintf(load_error, sizeof load_error, "the save data file %s could not be read", name);
+			return false;
+		}
+		String file = _mounted_name(name);
+		if (file.get_extension().to_lower() != "zip") {
+			ChimeraFS::put("/user/" + file, data.ptr(), data.size());
+			continue;
+		}
+		ChimeraFS::put("/tmp/chimera-savedata.zip", data.ptr(), data.size());
+		Ref<ZIPReader> zip;
+		zip.instantiate();
+		if (zip->open("/tmp/chimera-savedata.zip") != OK) {
+			snprintf(load_error, sizeof load_error, "the save data file %s is not a zip Godot can read", name);
+			return false;
+		}
+		PackedStringArray entries = zip->get_files();
+		for (const String &entry : entries) {
+			if (entry.ends_with("/")) {
+				continue; // a folder: made with the files in it
+			}
+			if (!_good_save_name(entry)) {
+				snprintf(load_error, sizeof load_error, "the save data zip %s holds %s, which is not a name in user://", name, entry.utf8().get_data());
+				return false;
+			}
+			PackedByteArray bytes = zip->read_file(entry, true);
+			ChimeraFS::put("/user/" + entry, bytes.ptr(), bytes.size());
+		}
+		zip->close();
+		ChimeraFS::remove("/tmp/chimera-savedata.zip");
+	}
+	return true;
+}
 
 /* ---- Chimera's calls ---------------------------------------------------- */
 
@@ -422,7 +497,6 @@ ECL_EXPORT int Init(void) {
 			ChimeraFS::mount("/game/" + _mounted_name(name), name);
 		}
 	}
-	ChimeraFS::put("/game/override.cfg", (const uint8_t *)override_cfg, sizeof override_cfg - 1);
 
 	CharString fps_arg = String::num_int64(fps).utf8();
 	char verbose[8] = "";
@@ -433,6 +507,10 @@ ECL_EXPORT int Init(void) {
 		"--audio-driver", "Dummy",
 		"--fixed-fps", fps_arg.get_data(),
 		"--disable-crash-handler",
+		// Godot's log file, which a desktop game keeps in user://logs, goes
+		// nowhere: it would grow in the machine's memory and come out with
+		// the save data. Its lines still reach the console.
+		"--log-file", "/dev/null",
 		strcmp(verbose, "true") == 0 ? "--verbose" : "--no-header",
 	};
 	const int argc = sizeof args / sizeof args[0];
@@ -448,6 +526,12 @@ ECL_EXPORT int Init(void) {
 		return 0;
 	}
 
+	// The OpenGL renderer's shader cache, which a desktop game keeps in
+	// user://shader_cache, is not kept: it would come out with the save data
+	// and fill every savestate. Set here, after the game's settings are read
+	// and before the renderer starts, so a game cannot turn it back on.
+	ProjectSettings::get_singleton()->set_setting("rendering/shader_compiler/shader_cache/enabled", false);
+
 	// the sound is mixed when the core asks, at the rate Chimera plays it
 	AudioDriverDummy *dummy = AudioDriverDummy::get_dummy_singleton();
 	dummy->set_use_threads(false);
@@ -456,6 +540,10 @@ ECL_EXPORT int Init(void) {
 	err = Main::setup2();
 	if (err != OK) {
 		snprintf(load_error, sizeof load_error, "Godot could not start this game (setup2 error %d)", (int)err);
+		return 0;
+	}
+	// before the game's first scene, which may read its saves at once
+	if (!_seed_save_data()) {
 		return 0;
 	}
 	if (Main::start() != EXIT_SUCCESS) {
@@ -584,6 +672,40 @@ ECL_EXPORT int64_t GetMemoryDomainSize(int p_index) {
 
 ECL_EXPORT int GetMemoryDomainWritable(int p_index) {
 	return 0;
+}
+
+// Emulator > Export Save Data: everything the game has written to user://,
+// under its path there. The list is taken when Chimera asks for the count.
+static Vector<String> savedata_paths;
+static CharString savedata_name;
+
+ECL_EXPORT int32_t GetSaveDataFileCount(void) {
+	ChimeraFS::list_user_files(savedata_paths);
+	return (int32_t)savedata_paths.size();
+}
+
+ECL_EXPORT const char *GetSaveDataFileName(int32_t p_index) {
+	if (p_index < 0 || p_index >= savedata_paths.size()) {
+		return "";
+	}
+	savedata_name = savedata_paths[p_index].utf8();
+	return savedata_name.get_data();
+}
+
+ECL_EXPORT int64_t GetSaveDataFileSize(int32_t p_index) {
+	if (p_index < 0 || p_index >= savedata_paths.size()) {
+		return 0;
+	}
+	ChimeraFSRef n = ChimeraFS::find("/user/" + savedata_paths[p_index]);
+	return n.is_valid() ? (int64_t)n->size() : 0;
+}
+
+ECL_EXPORT const uint8_t *GetSaveDataFileBuffer(int32_t p_index) {
+	if (p_index < 0 || p_index >= savedata_paths.size()) {
+		return nullptr;
+	}
+	ChimeraFSRef n = ChimeraFS::find("/user/" + savedata_paths[p_index]);
+	return n.is_valid() && !n->is_mounted() ? n->data.ptr() : nullptr;
 }
 
 // The machine's own clock, in frames.

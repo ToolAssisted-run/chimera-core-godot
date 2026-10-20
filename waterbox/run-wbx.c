@@ -64,6 +64,9 @@ static intfn g_InputWasRead;
 static intfn g_GetVsyncNumerator, g_GetVsyncDenominator;
 static u64fn g_GetCycleCount;
 static voidfn_i g_SetRenderingEnabled;
+static intfn g_GetSaveDataFileCount;
+static ptrfn_i g_GetSaveDataFileName, g_GetSaveDataFileBuffer;
+static i64fn_i g_GetSaveDataFileSize;
 static int g_rerecord;
 static int g_session;
 static long g_sessionAt = -1;
@@ -101,6 +104,10 @@ static const int16_t *core_audio(int *n)
 	return (const int16_t *)g_GetAudio();
 }
 static int core_input_was_read(void) { return g_InputWasRead(); }
+static int32_t core_savedata_count(void) { return g_GetSaveDataFileCount(); }
+static const char *core_savedata_name(int32_t i) { return (const char *)g_GetSaveDataFileName(i); }
+static int64_t core_savedata_size(int32_t i) { return g_GetSaveDataFileSize(i); }
+static const uint8_t *core_savedata_buffer(int32_t i) { return (const uint8_t *)g_GetSaveDataFileBuffer(i); }
 static int core_vsync_numerator(void) { return g_GetVsyncNumerator(); }
 static int core_vsync_denominator(void) { return g_GetVsyncDenominator(); }
 static uint64_t core_clock(void) { return g_GetCycleCount(); }
@@ -214,6 +221,10 @@ static void resolve_exports(void)
 	g_GetAudio = (ptrfn)proc(g_host, "GetAudio");
 	g_GetAudioSampleCount = (intfn)proc(g_host, "GetAudioSampleCount");
 	g_InputWasRead = (intfn)proc(g_host, "InputWasRead");
+	g_GetSaveDataFileCount = (intfn)proc(g_host, "GetSaveDataFileCount");
+	g_GetSaveDataFileName = (ptrfn_i)proc(g_host, "GetSaveDataFileName");
+	g_GetSaveDataFileSize = (i64fn_i)proc(g_host, "GetSaveDataFileSize");
+	g_GetSaveDataFileBuffer = (ptrfn_i)proc(g_host, "GetSaveDataFileBuffer");
 	g_GetVsyncNumerator = (intfn)proc(g_host, "GetVsyncNumerator");
 	g_GetVsyncDenominator = (intfn)proc(g_host, "GetVsyncDenominator");
 	g_GetCycleCount = (u64fn)proc(g_host, "GetCycleCount");
@@ -252,6 +263,10 @@ int main(int argc, char **argv)
 		.video = core_video,
 		.audio = core_audio,
 		.input_was_read = core_input_was_read,
+		.savedata_count = core_savedata_count,
+		.savedata_name = core_savedata_name,
+		.savedata_size = core_savedata_size,
+		.savedata_buffer = core_savedata_buffer,
 		.vsync_numerator = core_vsync_numerator,
 		.vsync_denominator = core_vsync_denominator,
 		.pre_frame = core_pre_frame,

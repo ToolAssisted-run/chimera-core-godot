@@ -29,6 +29,10 @@ extern void SetRenderingEnabled(int on);
 extern int GetVsyncNumerator(void);
 extern int GetVsyncDenominator(void);
 extern uint64_t GetCycleCount(void);
+extern int32_t GetSaveDataFileCount(void);
+extern const char *GetSaveDataFileName(int32_t i);
+extern int64_t GetSaveDataFileSize(int32_t i);
+extern const uint8_t *GetSaveDataFileBuffer(int32_t i);
 
 static void frame(void) { FrameAdvance(0); }
 static const uint32_t *video(int *w, int *h)
@@ -73,6 +77,10 @@ int main(int argc, char **argv)
 		.pre_frame = NULL,
 		.set_rendering = SetRenderingEnabled,
 		.clock = GetCycleCount,
+		.savedata_count = GetSaveDataFileCount,
+		.savedata_name = GetSaveDataFileName,
+		.savedata_size = GetSaveDataFileSize,
+		.savedata_buffer = GetSaveDataFileBuffer,
 	};
 	return gate_run(&c, &o);
 }

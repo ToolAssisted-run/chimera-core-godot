@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "input-names.h"
@@ -258,6 +259,13 @@ static int gate_run(const struct gate_core *c, const struct gate_opts *o)
 		{
 			char path[1024];
 			snprintf(path, sizeof path, "%s/%s", o->savedataOut, c->savedata_name(i));
+			/* a file in a folder of user:// gets its folders */
+			for (char *slash = strchr(path + strlen(o->savedataOut) + 1, '/'); slash; slash = strchr(slash + 1, '/'))
+			{
+				*slash = 0;
+				mkdir(path, 0755);
+				*slash = '/';
+			}
 			FILE *sf = fopen(path, "wb");
 			if (sf) { fwrite(c->savedata_buffer(i), 1, (size_t)c->savedata_size(i), sf); fclose(sf); }
 			printf("savedata[%s]=%lld\n", c->savedata_name(i), (long long)c->savedata_size(i));

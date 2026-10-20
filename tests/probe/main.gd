@@ -9,14 +9,22 @@ var saved := ""
 
 func _ready() -> void:
 	rng.randomize()
-	# a save written at start and read back: user:// is the core's memory
+	# saves read at start and written again: user:// is the core's memory,
+	# and a project's save data is put there before the game starts
 	var f := FileAccess.open("user://probe.txt", FileAccess.READ)
 	if f:
 		saved = f.get_as_text()
+	var slot := ""
+	f = FileAccess.open("user://saves/slot.dat", FileAccess.READ)
+	if f:
+		slot = f.get_as_text()
 	f = FileAccess.open("user://probe.txt", FileAccess.WRITE)
 	f.store_string("written at unix %d" % int(Time.get_unix_time_from_system()))
+	DirAccess.make_dir_recursive_absolute("user://saves")
+	f = FileAccess.open("user://saves/slot.dat", FileAccess.WRITE)
+	f.store_string("slot of frame %d" % Engine.get_process_frames())
 	f = null
-	print("probe ready unix=%d date=%s ticks=%d rnd=%d randf=%.6f window=%s os=%s saved=[%s]" % [
+	print("probe ready unix=%d date=%s ticks=%d rnd=%d randf=%.6f window=%s os=%s saved=[%s] slot=[%s]" % [
 		int(Time.get_unix_time_from_system()),
 		Time.get_datetime_string_from_system(true),
 		Time.get_ticks_msec(),
@@ -24,7 +32,8 @@ func _ready() -> void:
 		randf(),
 		str(DisplayServer.window_get_size()),
 		OS.get_name(),
-		saved])
+		saved,
+		slot])
 
 
 func _input(event: InputEvent) -> void:

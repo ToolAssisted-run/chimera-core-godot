@@ -68,8 +68,7 @@ built for it.
   `res://`, `user://` and plain paths: `/game` holds the project's files,
   read through the descriptors Chimera mounted (never copied in); `/user` is
   `user://`, empty at power-on; anything a game writes anywhere stays in
-  memory and goes into states. Directory listings are sorted. File logging
-  is turned off by an `override.cfg` the core puts beside the executable.
+  memory and goes into states. Directory listings are sorted.
 - **The window** (`chimera_display.cpp`) is the size the game's project
   settings ask for, up to 1920x1080 (the package's capacity); the one screen
   is that size. After each frame the picture is read back with
@@ -115,6 +114,25 @@ Godot and in Mesa alike.
 - Through Chimera: `chimera-run` from a movie file and from a project, and
   Chimera's window under Xvfb, all draw the reference's last picture.
 
+## Save data (2026-10-20)
+
+- Export Save Data is every file under `user://`, by its path there
+  (`saves/slot.dat`); Chimera zips several. A project's "Save data" slot is
+  read during Init, after Godot is set up and before its first scene: a file
+  goes to `user://<its name>`, a `.zip` is unpacked with its folders (by
+  Godot's own ZIPReader, reading from the core's disk). A zip entry that is
+  not a plain relative name (`../escape.txt`) refuses the load and says
+  which. A file of the export that was in a folder goes back in it only
+  from the zip: a single file's name has no folder.
+- Godot keeps two things of its own in `user://` on a desktop: its log
+  (`user://logs`) and the OpenGL shader cache (`user://shader_cache`, seen
+  in the first export). Both would come out as save data and fill every
+  state. The log goes to `/dev/null` (`--log-file`; a file in the core's disk
+  that keeps nothing; its lines still reach the console), and the shader
+  cache is switched off in the project's settings after they are read and
+  before the renderer starts. An `override.cfg` did this at first; a game
+  may forbid overrides, or bring its own, so it is gone.
+
 ## Sharp edges
 
 - `pkill -f` with the name of a running script kills the shell that typed it
@@ -125,8 +143,6 @@ Godot and in Mesa alike.
 
 ## Next
 
-- Save data: Export Save Data from `user://`, and a project's save data put
-  in place before the game starts.
 - A real game from boot to play, and a game with a `.pck` inside its
   executable.
 - Windows: the frontend test's scenario on the Windows build.

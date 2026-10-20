@@ -29,6 +29,8 @@ void ChimeraFS::initialize() {
 	make_dir("/game");
 	make_dir("/user");
 	make_dir("/tmp");
+	make_dir("/dev");
+	make_file("/dev/null")->discard = true;
 }
 
 // An absolute path with no ".", "..", empty or trailing parts. A relative
@@ -116,7 +118,7 @@ Error ChimeraFS::remove(const String &p_abs) {
 	if (n.is_null() || p_abs == "/") {
 		return ERR_FILE_NOT_FOUND;
 	}
-	if (n->is_mounted()) {
+	if (n->is_mounted() || n->discard) {
 		return ERR_FILE_CANT_WRITE;
 	}
 	if (n->dir) {
@@ -135,7 +137,7 @@ Error ChimeraFS::rename(const String &p_from, const String &p_to) {
 	if (n.is_null() || p_from == "/") {
 		return ERR_FILE_NOT_FOUND;
 	}
-	if (n->is_mounted()) {
+	if (n->is_mounted() || n->discard) {
 		return ERR_FILE_CANT_WRITE;
 	}
 	if (!parent_exists(p_to) || _is_under(p_to, p_from)) {
@@ -272,7 +274,7 @@ Error FileAccessChimera::open_internal(const String &p_path, int p_mode_flags) {
 				return last_error;
 			}
 		}
-		if (p_mode_flags == WRITE || p_mode_flags == WRITE_READ) {
+		if ((p_mode_flags == WRITE || p_mode_flags == WRITE_READ) && !n->discard) {
 			n->data.clear();
 			n->modified_time = _now();
 		}
@@ -376,7 +378,7 @@ Error FileAccessChimera::resize(int64_t p_length) {
 bool FileAccessChimera::store_buffer(const uint8_t *p_src, uint64_t p_length) {
 	ERR_FAIL_COND_V_MSG(node.is_null(), false, "File must be opened before use.");
 	ERR_FAIL_COND_V(!writable, false);
-	if (p_length == 0) {
+	if (p_length == 0 || node->discard) {
 		return true;
 	}
 	ERR_FAIL_NULL_V(p_src, false);

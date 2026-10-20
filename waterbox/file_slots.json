@@ -31,6 +31,27 @@
         "ini"
       ],
       "help": "Files the game opens from the folder its executable is in, under the names it asks for: a second .pck it loads (downloadable content, a mod), or data it reads beside itself. A game that loads nothing else needs nothing here."
+    },
+    {
+      "id": "savedata",
+      "title": "Save data",
+      "min": 0,
+      "max": -1,
+      "formats": [
+        "save",
+        "sav",
+        "dat",
+        "json",
+        "cfg",
+        "ini",
+        "txt",
+        "bin",
+        "tres",
+        "res",
+        "zip",
+        ""
+      ],
+      "help": "What the game keeps in user:// (its saves and settings), as Emulator > Export Save Data wrote it: each file under its own name, or the .zip the export makes of several. They are put in user:// before the game starts, so the game finds them as its own. A file of the export that was in a folder of user:// goes back in that folder only from the .zip."
     }
   ]
 }

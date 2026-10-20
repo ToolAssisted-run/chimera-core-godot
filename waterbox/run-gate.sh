@@ -25,7 +25,11 @@
 #                press and release, a second click within 400 ms is a double
 #                click and a later one is not, the wheel turns a notch a frame
 #   controller   a button and the stick and trigger axes reach the game
-#   user://      a file the game writes is there for it to read, in memory
+#   save data    Export Save Data is what the game wrote to user:// (and
+#                nothing of Godot's own), the same in both builds and after a
+#                session; a project's save file, or the export's .zip, is in
+#                user:// when the game starts; a zip that names a place
+#                outside user:// is refused
 #   refusals     a pack that is not there, and a file that is not a pack:
 #                each says why
 #
@@ -181,10 +185,49 @@ has controller "$work/pn.txt" "probe event f=50 pad axis 5 0.4883" "the right tr
 has controller "$work/pn.txt" "probe f=62 ticks=1033333 delta=0.016667 unix=946684801.033 rnd=" "the frames go on after the controller is let go"
 has user:// "$work/pn.txt" "saved=[]" "the game's user:// is empty when the machine starts"
 
-# a file the game wrote at start is read by the next start in the same
-# machine: none here (one start a run), so the probe proves the write did not
-# fail and the read of a missing file is "nothing"; the save data tests come
-# with the save data slot
+echo "== save data (the probe keeps user://probe.txt and user://saves/slot.dat)"
+mkdir -p "$work/sdn" "$work/sdw" "$work/sds"
+"$native" "$work/probe" --frames 30 --savedata-out "$work/sdn" > "$work/sdn.txt" 2> /dev/null
+"$wbx" "$core" "$work/probe" --frames 30 --savedata-out "$work/sdw" > "$work/sdw.txt" 2> /dev/null
+"$wbx" "$core" "$work/probe" --frames 30 --session-at 10 --savedata-out "$work/sds" > "$work/sds.txt" 2> /dev/null
+if [ "$(cat "$work/sdn/probe.txt" 2>/dev/null)" = "written at unix 946684800" ] && [ "$(cat "$work/sdn/saves/slot.dat" 2>/dev/null)" = "slot of frame 0" ] &&
+   [ "$(cd "$work/sdn" && find . -type f | sort | xargs cat | sha1sum)" = "$(cd "$work/sdw" && find . -type f | sort | xargs cat | sha1sum)" ] &&
+   diff -r "$work/sdw" "$work/sds" > /dev/null && [ "$(find "$work/sdn" -type f | wc -l)" = 2 ]; then
+	pass "save data: Export Save Data has the game's two files, one in a folder, and nothing else (no log, no shader cache); native = sandbox = a session"
+else
+	fail "save data: export: $(cd "$work/sdn" 2>/dev/null && find . -type f | sort | tr '\n' ' ')"
+fi
+seed() { # seed <dir> <slots JSON> <file to bring>...
+	local d="$work/$1" slots="$2"; shift 2
+	mkdir -p "$d"
+	cp "$root/tests/probe.pck" "$d/"
+	printf '%s' "$slots" > "$d/slots"
+	printf '{}' > "$d/settings"
+	for f in "$@"; do cp "$f" "$d/"; done
+}
+printf 'hello from a project' > "$work/probe.txt"
+seed seed1 '{"pack":["probe.pck"],"savedata":["probe.txt"]}' "$work/probe.txt"
+"$native" "$work/seed1" --frames 2 > "$work/seed1.txt" 2> /dev/null
+has "save data" "$work/seed1.txt" "saved=[hello from a project] slot=[]" "a project's save file is in user:// when the game starts"
+( cd "$work/sdw" && python3 -c "
+import os, zipfile
+z = zipfile.ZipFile('../user.zip', 'w')
+for root, dirs, files in sorted(os.walk('.')):
+    for f in sorted(files):
+        z.write(os.path.join(root, f), os.path.relpath(os.path.join(root, f), '.'))
+" )
+seed seedzip '{"pack":["probe.pck"],"savedata":["user.zip"]}' "$work/user.zip"
+"$native" "$work/seedzip" --frames 2 > "$work/seedzip.txt" 2> /dev/null
+"$wbx" "$core" "$work/seedzip" --frames 2 > "$work/seedzipw.txt" 2> /dev/null
+has "save data" "$work/seedzip.txt" "saved=[written at unix 946684800] slot=[slot of frame 0]" "the export, zipped as Chimera zips several files, goes back with its folder"
+same "save data" "$work/seedzip.txt" "$work/seedzipw.txt" "the zip read back: native = sandbox"
+python3 -c "
+import zipfile
+z = zipfile.ZipFile('$work/bad.zip', 'w'); z.writestr('../escape.txt', 'no'); z.close()"
+mkdir -p "$work/seedbad"; cp "$work/bad.zip" "$work/seedbad/user.zip"
+seed seedbad '{"pack":["probe.pck"],"savedata":["user.zip"]}'
+"$native" "$work/seedbad" --frames 1 > "$work/seedbad.txt" 2> /dev/null
+has "save data" "$work/seedbad.txt" "loadError=the save data zip user.zip holds ../escape.txt, which is not a name in user://" "a zip holding a name outside user:// is refused, saying which"
 
 echo "== refusals"
 mkdir -p "$work/nopack"

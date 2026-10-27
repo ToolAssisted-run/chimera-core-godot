@@ -111,7 +111,7 @@ Godot and in Mesa alike.
   button and axes.
 - Speed: see "The software OpenGL" below.
 - Through Chimera: `chimera-run` from a movie file and from a project, and
-  Chimera's window under Xvfb, all draw the reference's last picture.
+  Chimera's window run headless, all draw the reference's last picture.
 
 ## Save data (2026-10-20)
 

@@ -53,7 +53,9 @@ loads from beside its executable (a second `.pck`, data) go in the project's
   Godot's own layout.
 - **Settings**: Frame Rate (how many frames make a second of the game's time;
   60 by default), Starting Clock (the date the game reads; movies need the
-  same value) and Godot's Log (Godot's `--verbose`).
+  same value), Drawing Size (how big a picture the game draws: 50% has a
+  quarter of the pixels and runs about twice as fast or more; movies need
+  the same value) and Godot's Log (Godot's `--verbose`).
 
 What a game writes to `user://` (its saves and settings) lives in the core's
 memory, starts empty, and is carried by savestates. Emulator > Export Save

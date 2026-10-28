@@ -198,6 +198,31 @@ engine), each this repository's code with its own Godot pinned (4.4.1,
 - Godot 4.4 writes the objects of a module outside its tree beside the
   module's sources: `*.o` is ignored.
 
+## Drawing Size (2026-10-28, chimera issue 380)
+
+Godot draws every pixel on the CPU here (llvmpipe, on one processor, with
+the baseline x86-64's instructions), so the time a frame takes follows the
+number of pixels drawn: a game drawing at 1920x1080 ran at about one frame
+a second. The owner chose two ways to make that faster; this is the first.
+
+The Drawing Size setting (100%, 75%, 50% or 25%) gives the game a window of
+that share of the size it asks for, and the game draws at that size; the
+picture is shown at the same size in Chimera, softer. A game that stretches
+its picture to its window (Godot's `canvas_items` or `disabled` stretch
+modes) draws fewer pixels; one that draws at a fixed size of its own
+(`viewport`) is not made faster. The game is told the smaller size, so it is
+part of the machine: a movie needs the same value. A size the game was
+given, asked for again, is kept, so the share is never taken twice.
+
+Measured on Dodge the Creeps (480x720), 600 frames in the sandbox on this
+computer: 9.2 s at 100%, 4.8 s at 50% (start included). At 50% it draws
+240x360, the same scene, and plays exactly the same steps. The test script
+checks that, and that native and the sandbox agree at 50%; it was seen to
+fail with the setting ignored.
+
+The second way, letting llvmpipe use AVX2 where the computer has it, is not
+done yet.
+
 ## Sharp edges
 
 - `pkill -f` with the name of a running script kills the shell that typed it

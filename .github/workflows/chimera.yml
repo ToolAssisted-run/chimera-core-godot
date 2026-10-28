@@ -76,13 +76,16 @@ jobs:
       - name: Build Chimera (the engine, chimera-run and the window)
         run: chimera-checkout/tools/ci-chimera.sh "$HOME/qt"
 
+      # The checkout's path is in these two keys: a build folder names its
+      # sources by their full path, and a renamed repository is checked out
+      # under its new name.
       - name: Cache miniBox's sandbox toolchain
         uses: actions/cache@v4
         with:
           path: |
             chimera-checkout/extern/chimera-common-minibox/build/meson-linux
             chimera-checkout/extern/chimera-common-minibox/build/meson-cpp
-          key: guest-cpp-${{ runner.os }}-${{ hashFiles('chimera-checkout/extern/chimera-common-minibox/.git') }}-${{ hashFiles('chimera-checkout/extern/chimera-common-minibox/meson.build') }}
+          key: guest-cpp-${{ runner.os }}-${{ github.workspace }}-${{ hashFiles('chimera-checkout/extern/chimera-common-minibox/.git') }}-${{ hashFiles('chimera-checkout/extern/chimera-common-minibox/meson.build') }}
 
       - name: Build miniBox (the sandbox, and its C++ toolchain)
         run: |
@@ -99,7 +102,7 @@ jobs:
             build/llvm-native
             build/llvm-guest
             build/mesa
-          key: llvm-mesa-${{ runner.os }}-${{ hashFiles('waterbox/build-llvm.sh', 'waterbox/guest-toolchain.cmake', 'waterbox/setup-mesa.sh', 'waterbox/mesa-patches/*') }}-${{ hashFiles('chimera-checkout/extern/chimera-common-minibox/.git') }}
+          key: llvm-mesa-${{ runner.os }}-${{ github.workspace }}-${{ hashFiles('waterbox/build-llvm.sh', 'waterbox/guest-toolchain.cmake', 'waterbox/setup-mesa.sh', 'waterbox/mesa-patches/*') }}-${{ hashFiles('chimera-checkout/extern/chimera-common-minibox/.git') }}
 
       - name: Build LLVM and Mesa (when not cached)
         run: |

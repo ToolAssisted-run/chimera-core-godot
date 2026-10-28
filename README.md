@@ -22,7 +22,8 @@ Core Manager lists it.
 
 - Godot 4 games written in GDScript, drawn with Godot's Compatibility
   renderer (OpenGL 3.3) on a software OpenGL inside the core (Mesa's
-  llvmpipe, made to generate the same code on every computer). A game made
+  llvmpipe, which makes the same code on every computer with AVX2, and on
+  every computer when Drawing Code is Baseline). A game made
   for the Forward+ or Mobile renderer is drawn by the Compatibility renderer
   too, which lacks some of their effects.
 - Tried: Godot's "Dodge the Creeps" demo and this repository's probe game.
@@ -55,7 +56,9 @@ loads from beside its executable (a second `.pck`, data) go in the project's
   60 by default), Starting Clock (the date the game reads; movies need the
   same value), Drawing Size (how big a picture the game draws: 50% has a
   quarter of the pixels and runs about twice as fast or more; movies need
-  the same value) and Godot's Log (Godot's `--verbose`).
+  the same value), Drawing Code (AVX2, the default, draws faster on a
+  computer with those instructions; Baseline gives the same pictures on any
+  computer) and Godot's Log (Godot's `--verbose`).
 
 What a game writes to `user://` (its saves and settings) lives in the core's
 memory, starts empty, and is carried by savestates. Emulator > Export Save

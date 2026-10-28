@@ -220,8 +220,35 @@ computer: 9.2 s at 100%, 4.8 s at 50% (start included). At 50% it draws
 checks that, and that native and the sandbox agree at 50%; it was seen to
 fail with the setting ignored.
 
-The second way, letting llvmpipe use AVX2 where the computer has it, is not
-done yet.
+## Drawing Code: AVX2 where the computer has it (user-decided, 2026-10-28, chimera issue 380)
+
+The second way. llvmpipe was told of the baseline x86-64 on every computer
+(mesa-patches/0001), so every picture was the same everywhere, at the cost of
+128-bit vectors and none of the newer instructions. The owner chose to let it
+use AVX2, and to make that the default.
+
+- The Drawing Code setting: AVX2 (the default) or Baseline. With AVX2, Mesa
+  (mesa-patches/0002) asks the computer whether it has all of x86-64-v3
+  (AVX2, FMA, BMI1 and 2, LZCNT, MOVBE, F16C, and an OS that saves the wider
+  registers); if so, llvmpipe is told of that CPU - 256-bit vectors, still
+  one processor - and LLVM makes x86-64-v3's code, the same on every such
+  computer. Otherwise, and with Baseline, the 0001 baseline as before.
+- The game plays the same either way: only the pictures may differ by a
+  shade between a computer with AVX2 and one without. A movie's steps,
+  sound and everything the game decides are unchanged; a game that reads
+  its own pictures back is the exception.
+- The core gives Mesa the setting through `chimera_llvmpipe_avx2`, a weak
+  symbol for Mesa, so Mesa's own libOSMesa keeps the baseline.
+- miniBox saves the whole vector state (xsave, every feature the OS turns
+  on) when a fault stops the guest, so 256-bit registers survive it.
+
+Measured on Dodge the Creeps, 600 frames in the sandbox on this computer,
+start included: 9.6 s with Baseline, 8.0 s with AVX2, 4.6 s with AVX2 at
+Drawing Size 50%; the same steps in all three. The test script checks the
+256-bit code in the sandbox and natively, native = sandbox with it (every
+picture, the sound, the steps, savestates), and that Baseline still makes
+128-bit code and plays the same steps. The 256-bit checks failed while the
+setting was not read when not given (a project made before has none).
 
 ## Sharp edges
 

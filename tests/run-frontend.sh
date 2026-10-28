@@ -63,7 +63,7 @@ if bash "$wb/build-package.sh" -m "$mb" -o "$work/pkg" > "$work/package.log" 2>&
 else
 	report "package" FAIL "see build/frontend/package.log"; echo; echo "$ok ok, $failed failed"; exit 1
 fi
-pkg="$work/pkg/godot.chimeraCore"
+pkg="$work/pkg/godot47.chimeraCore"
 
 # The movie: Enter starts the game at frame 130, Left moves the player from
 # 200 to 260, the mouse goes to the window's middle-left at 240. The last

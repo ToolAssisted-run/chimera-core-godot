@@ -1,4 +1,4 @@
-# Building and testing the Godot core
+# Building and testing the Godot 4.7 core
 
 ## Requirements
 
@@ -21,7 +21,7 @@
 
 ## Sources
 
-    git clone --recursive https://github.com/ToolAssisted-run/chimera-core-godot
+    git clone --recursive https://github.com/ToolAssisted-run/chimera-core-godot47
     git submodule update --init extern/godot
 
 `extern/godot` is Godot at `4.7.2-stable`. It is never built in: every
@@ -48,7 +48,7 @@ All from the repository's root, with `-m <chimera>/extern/chimera-common-minibox
    `build/guest/core.wbx`, checked by miniBox's `check-wbx.sh`, and
    `build/guest/run-wbx`, which runs it in the sandbox.
 5. `waterbox/build-package.sh -m <mb>` (or `-r <chimera>` to install it in
-   that checkout's `build/Cores`): `godot.chimeraCore`. It does steps 1, 3
+   that checkout's `build/Cores`): `godot47.chimeraCore`. It does steps 1, 3
    and 4 for the guest itself.
 
 `waterbox/jit-symbols.c` is linked into both builds: it answers LLVM's

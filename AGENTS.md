@@ -1,4 +1,4 @@
-# AGENTS.md - chimera-core-godot
+# AGENTS.md - chimera-core-godot47
 
 The Godot Engine (4.7.2) as a Chimera core: Godot's export template built
 for miniBox's sandbox with a Chimera module in it. The user brings a game's
@@ -54,4 +54,4 @@ for miniBox's sandbox with a Chimera module in it. The user brings a game's
 - Stop a build by its PID, never with `pkill -f`.
 - `module/`, `waterbox/` and `tests/` (but the test games and
   `tests/make-test-game.sh`'s editor) are the same files in the four Godot
-  cores (godot, godot46, godot45, godot44): a change here is made there too.
+  cores (godot47, godot46, godot45, godot44): a change here is made there too.

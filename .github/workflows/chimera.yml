@@ -150,8 +150,8 @@ jobs:
       - name: Upload the package
         uses: actions/upload-artifact@v7
         with:
-          name: godot-${{ github.sha }}
-          path: chimera-checkout/build/Cores/godot.chimeraCore
+          name: godot47-${{ github.sha }}
+          path: chimera-checkout/build/Cores/godot47.chimeraCore
           if-no-files-found: error
 
       - name: Upload the test output on failure
@@ -175,7 +175,7 @@ jobs:
       contents: write
     uses: ToolAssisted-run/chimera/.github/workflows/publish-core.yml@main
     with:
-      core-id: godot
-      artifact: godot-${{ github.sha }}
-      package: godot.chimeraCore
+      core-id: godot47
+      artifact: godot47-${{ github.sha }}
+      package: godot47.chimeraCore
       kind: ${{ github.event.inputs.kind }}

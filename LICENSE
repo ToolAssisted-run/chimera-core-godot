@@ -27,7 +27,7 @@ What this license covers, and what the built core contains
 The license above covers this repository's own code: the Chimera module in
 module/chimera, the scripts in waterbox/ and the documents.
 
-The core package built from it (godot.chimeraCore) also contains:
+The core package built from it (godot47.chimeraCore) also contains:
 
 - the Godot Engine, built from the submodule extern/godot (4.7.2-stable)
   with the patches in patches/ applied. Godot is under the MIT license

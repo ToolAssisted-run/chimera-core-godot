@@ -1,4 +1,4 @@
-# The Godot core: plan and design log
+# The Godot 4.7 core: plan and design log
 
 Chimera issue #322 asked for Godot games. The owner decided on 2026-10-20 to
 build a core, starting with Godot 4.7.2, the latest stable release
@@ -249,6 +249,16 @@ Drawing Size 50%; the same steps in all three. The test script checks the
 picture, the sound, the steps, savestates), and that Baseline still makes
 128-bit code and plays the same steps. The 256-bit checks failed while the
 setting was not read when not given (a project made before has none).
+
+## Named for its version (user-decided, 2026-10-28)
+
+The core was "Godot", its repository chimera-core-godot and its package
+godot.chimeraCore. The owner renamed them "Godot 4.7", chimera-core-godot47
+and godot47.chimeraCore, so that the name says the version as the other
+Godot cores' names do. The system id stays "Godot", and so do the
+controller's name and its key bindings. Chimera keeps no mechanism for old
+names: a project made with "Godot" is made again with the Godot 4.7 core
+(or its core name changed by hand).
 
 ## Sharp edges
 

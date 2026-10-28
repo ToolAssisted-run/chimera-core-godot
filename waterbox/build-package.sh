@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds the Godot core package, godot.chimeraCore.
+# Builds the Godot 4.7 core package, godot47.chimeraCore.
 #
 # A package is core.wbx (fixed name) + waterbox.config + default_keybinds.json +
 # file_slots.json + the licences, loaded through chimera's one built-in generic
@@ -117,7 +117,7 @@ json.dump({
 PYPROV
 
 mkdir -p "$out"
-zip_path="$out/godot.chimeraCore"
+zip_path="$out/godot47.chimeraCore"
 rm -f "$zip_path"
 # deterministic packaging: sorted entries, fixed timestamp/permissions, pinned
 # compression - the package's SHA1 is the core's identity (movies cite it)
@@ -151,7 +151,7 @@ print(f"package sha1 {first}")
 PYEOF
 
 if [ -n "$chimera_root" ]; then
-	for cache in "$chimera_root"/build/CoreCache/godot-*; do
+	for cache in "$chimera_root"/build/CoreCache/godot47-*; do
 		[ -d "$cache" ] && rm -rf "$cache" || true
 	done
 fi

@@ -5,12 +5,12 @@
   "note": "The built core combines this repository's code (MIT): the Chimera module in module/chimera and the build scripts; the Godot Engine (MIT), compiled from the submodule extern/godot (4.7.2-stable) as an export template for Linux with this repository's patches/ applied, which includes the third-party libraries Godot ships in its thirdparty/ folder (FreeType, HarfBuzz, ICU, libpng, libjpeg-turbo, libwebp, libogg, libvorbis, libtheora, mbed TLS, PCRE2, ThorVG, zlib, zstd, Brotli, Jolt Physics and others), each under the licence COPYRIGHT.txt gives; Mesa (MIT), whose llvmpipe driver behind OSMesa is the OpenGL Godot draws with (with this repository's waterbox/mesa-patches applied); and LLVM (Apache-2.0 with the LLVM exception), which llvmpipe compiles the shaders with. The package carries no game: the project brings the game's .pck.",
   "components": [
     {
-      "name": "chimera-core-godot (the Chimera module and the build)",
+      "name": "chimera-core-godot47 (the Chimera module and the build)",
       "license": "MIT",
-      "url": "https://github.com/ToolAssisted-run/chimera-core-godot",
+      "url": "https://github.com/ToolAssisted-run/chimera-core-godot47",
       "commit": "{selfCommit}",
       "file": "LICENSE",
-      "sourceUrl": "https://github.com/ToolAssisted-run/chimera-core-godot/archive/{commit}.tar.gz"
+      "sourceUrl": "https://github.com/ToolAssisted-run/chimera-core-godot47/archive/{commit}.tar.gz"
     },
     {
       "name": "Godot Engine",
